@@ -10,5 +10,6 @@ namespace TodoApp.Data
             : base(options) { }
 
         public virtual DbSet<ItemData> Items { get; set; }
+        public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

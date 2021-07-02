@@ -10,7 +10,7 @@ namespace TodoApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(Roles = "Role2")]
     public class TodoController : ControllerBase
     {
         private readonly ApiDbContext _context;

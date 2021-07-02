@@ -28,7 +28,7 @@ namespace TodoApp.Controllers
         private readonly ApiDbContext _context;
 
         public AuthManagementController(
-            UserManager<IdentityUser> userManager, 
+            UserManager<IdentityUser> userManager,
             IOptionsMonitor<JwtConfig> optionsMonitor,
             TokenValidationParameters tokenValidationParams,
             ApiDbContext context)
@@ -182,16 +182,29 @@ namespace TodoApp.Controllers
 
             var key = Encoding.ASCII.GetBytes(_jwtConfig.Secret);
 
+
+            var roles = from ur in _context.UserRoles
+                        join r in _context.Roles on ur.RoleId equals r.Id
+                        where ur.UserId == user.Id
+                        select new { ur.UserId, ur.RoleId, r.Name };
+
+            var claims = new ClaimsIdentity(new[]
+            {
+                new Claim("Id", user.Id),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            });
+
+            foreach (var role in roles)
+            {
+                claims.AddClaim(new Claim("Role", role.Name));
+            }
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim("Id", user.Id),
-                    new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) // Unique Id allowing user to generate new tokens w/ consistency.
-                }),
-                Expires = DateTime.UtcNow.AddSeconds(30), // Change to 5-10 minutes in production.
+                Subject = claims,
+                Expires = DateTime.UtcNow.AddSeconds(30),   // Change to 5 min in development
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), 
                     SecurityAlgorithms.HmacSha256Signature)
             };
